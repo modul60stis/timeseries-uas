@@ -1,0 +1,136 @@
+---
+title: "ECM"
+author: "TIM MODUL"
+date: "12/23/2020"
+output: 
+      md_document:
+            variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Library
+```{r message=FALSE, warning=FALSE}
+library(urca)
+library(readxl)
+library(knitr)
+```
+
+## Load Data
+```{r}
+commodity_price <- read_excel("commodity_price.xlsx")
+kable(head(commodity_price, 10))
+```
+
+```{r}
+GOLD <- ts(log(commodity_price$GOLD), start = c(1993, 11), frequency = 12)
+SILVER <- ts(log(commodity_price$SILVER), start = c(1993, 11), frequency = 12)
+par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+plot.ts(cbind(GOLD, SILVER), plot.type = "single", ylab = "", 
+        col = 4:3)
+legend("topleft", legend = c("gold", "silver"), col = 4:3, 
+       lty = 1, bty = "n")
+```
+
+## MENGECEK STASIONERITAS
+1. type = trend --> memasukkan elemen time trend ke dalam persamaan yang akan dicek
+2. type = drift --> memasukkan elemen drift ke dalam persamaan
+3. type = none --> memasukkan elemen sigma yang menunjukkan unit root
+
+```{r}
+adfg1 <- ur.df(GOLD, type = "trend", selectlags = c("BIC"))
+summary(adfg1) #tidak stasioner
+```
+
+```{r}
+adfg1 <- ur.df(GOLD, type = "drift", selectlags = c("BIC"))
+summary(adfg1) #tidak stasioner
+```
+
+```{r}
+adfg1 <- ur.df(GOLD, type = "none", selectlags = c("BIC"))
+summary(adfg1) #tidak stasioner
+```
+
+```{r}
+adfg2 <- ur.df(diff(GOLD), selectlags = c("BIC"))
+summary(adfg2) #sudah stasioner pada diff 1
+```
+```{r}
+adfs1 <- ur.df(SILVER, type = "trend", selectlags = c("BIC"))
+summary(adfs1) #tidak stasioner
+```
+
+```{r}
+adfs1 <- ur.df(SILVER, type = "drift", selectlags = c("BIC"))
+summary(adfs1) #tidak stasioner
+```
+
+```{r}
+adfs1 <- ur.df(SILVER, type = "none", selectlags = c("BIC"))
+summary(adfs1) #tidak stasioner
+```
+
+```{r}
+adfs2 <- ur.df(diff(SILVER), selectlags = c("BIC"))
+summary(adfs2) #sudah stasioner pada diff 1
+```
+## MELAKUKAN LINIER MODELING
+```{r}
+data<-ts.union(GOLD,SILVER)
+GOLD.eq<-lm(GOLD~SILVER,data=data)
+summary(GOLD.eq)
+```
+
+### Plot
+```{r}
+plot.ts(GOLD.eq$residuals)
+```
+
+## MELIHAT STASIONERITY DARI RESIDUAL
+```{r}
+error.GOLD <- ur.df(GOLD.eq$residuals)
+summary(error.GOLD) 
+```
+
+Sudah stasioner. Maka dapat dikatakan bahwa GOLD dan SILVER sudah terdapat kointegrasi pada model
+
+```{r}
+error.GOLD <- ur.df(GOLD.eq$residuals)
+summary(error.GOLD) #sudah stasioner
+```
+## MENGKONSTRUKSI ERROR CORRECTION MODEL 
+```{r}
+GOLD.d<-diff(GOLD)[-1]
+SILVER.d <- diff(SILVER)[-1]
+error.ecm1 <- GOLD.eq$residuals[-1:-2]
+kable(head(error.ecm1, 10))
+```
+
+```{r}
+GOLD.d1 <- diff(GOLD)[-(length(GOLD) - 1)]
+SILVER.d1 <- diff(SILVER[-(length(SILVER) - 1)])
+ecm.GOLD <- lm(GOLD.d ~ error.ecm1 + GOLD.d1 + SILVER.d1)
+summary(ecm.GOLD)
+```
+
+Yang diperhatikan adalah error corection term (error.ecm1) , terlihat bahwa koefisien yang menunjukkan seberapa jauh akan kembali menuju ke titik equilibrium jangka panjang adalah nilai yang diharapkan antara -1 sampai 0, nilai error.ecm1 sudah minus namun tidak signifikan , maka ada indikasi terdapat granger kausality (indikasi apakah suatu peubah mempunyai hubungan dua arah atau satu arah saja).
+ 
+## MENGKONSTRUKSI ERROR CORRECTION MODEL DENGAN SILVER sebagai dependent variable
+
+```{r}
+SILVER.eq<-lm(SILVER~GOLD,data=data)
+error.SILVER <- ur.df(SILVER.eq$residuals)
+summary(error.SILVER)
+```
+
+```{r}
+error.ecm2 <- SILVER.eq$residuals[-1:-2]
+ecm.SILVER <- lm(SILVER.d ~ error.ecm2 + GOLD.d1 + SILVER.d1)
+summary(ecm.SILVER)
+``` 
+
+Hasil menunjukkan error correction term (error.ecm2) positif dan tidak signifikan, maka karena tidak signifikan diindikasikan bahwa hubungan antara SILVER dan GOLD, misal digunakan SILVER sebagai dependent variable maka GOLD tidak dapat menjelaskan keseluruhan dari proses pembentukan harga pada SILVER, jadi data GOLD tidak cukup menjelaskan gejolak yang terjadi pada data SILVER, mungkin dapat mencari variabel-variabel lain atau solusi mungkin dapat mengubah time span dari data yang digunakan. Ada beberapa kasus terkadang ketika mengubah time span mungkin akan menghasilkan output yang berbeda. Namun misal hasil error correction model sudah negative dan sudah signifikan maka interpretasinya adalah untuk data ini menuju  titik equilibrium jangka panjang dibutuhkan 2% dari periode maka 2% dari bulan, sehingga dalam kurun waktu tersebut gejolak jangka pendek akan menuju ke keseimbangan jangka panjang. 
+
