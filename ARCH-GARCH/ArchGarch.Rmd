@@ -1,0 +1,276 @@
+---
+title: "TIME SERIES"
+author: "Tim Modul"
+date: "12/22/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+## Load Library
+```{r message=FALSE, warning=FALSE}
+library(fpp2)
+library("forecast")
+library(tseries)
+library(rugarch)
+library(knitr)
+library(MTS)
+```
+
+## Load Data
+```{r}
+data<- read.csv("kursRupiah.csv", header = T)
+kable(head(data, 10))
+```
+### Plot Time Series
+```{r}
+kurs <- ts(data$USD, start=c(2001, 1), freq=12)
+plot.ts(kurs, main = "Kurs bulanan Rp/US$")
+```
+
+```{r}
+tsdisplay(kurs)
+```
+
+### Stasionary Test
+
+#### Augmented Dicky Fuller Test
+```{r}
+adf.test(kurs)
+```
+#### KPSS Test
+```{r}
+kpss.test(kurs)
+```
+
+### Differencing
+```{r}
+diff.kurs <- diff(x=kurs)
+adf.test(diff.kurs) 
+```
+
+```{r}
+kpss.test(diff.kurs) 
+```
+
+```{r}
+tsdisplay(diff.kurs)
+```
+
+### Auto Arima
+```{r}
+auto.arima(kurs, approximation = FALSE, trace = TRUE)
+```
+
+### Residual Check
+```{r}
+modelKurs <- arima(kurs, order = c(0,1,0))
+r = resid(modelKurs)
+rr = r^2
+par(mfrow = c(1, 2))
+acf(as.vector(rr), main = "ACF residual kuadrat")
+pacf(as.vector(rr), main = "PACF residual kuadrat")
+```
+
+## uji efek ARCH
+```{r}
+archTest(r)
+```
+
+## PEMODELAN GARCH
+
+### Model 1
+```{r}
+model1<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(0,0)),
+                   distribution.model="std")
+model1Kurs <- ugarchfit(spec=model1, data=kurs)
+model1Kurs
+```
+
+### Model 2
+```{r}
+model2<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,1)),
+                   distribution.model="std")
+model2Kurs <- ugarchfit(spec=model2, data=kurs)
+model2Kurs 
+```
+
+### Model 3
+```{r}
+model3<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,1)),
+                   distribution.model="std")
+model3Kurs <- ugarchfit(spec=model3, data=kurs)
+model3Kurs 
+```
+
+### Model 4
+```{r}
+model4<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,0)),
+                   distribution.model="std")
+model4Kurs <- ugarchfit(spec=model4, data=kurs)
+model4Kurs 
+```
+
+### Model 5
+```{r}
+model5<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,0)),
+                   distribution.model="std")
+model5Kurs <- ugarchfit(spec=model5, data=kurs)
+model5Kurs 
+```
+
+### Model 6
+```{r}
+model6<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(0,1)),
+                   distribution.model="std")
+model6Kurs <- ugarchfit(spec=model6, data=kurs)
+model6Kurs 
+```
+
+### Model 7
+```{r}
+model7<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,2)),
+                   distribution.model="std")
+model7Kurs <- ugarchfit(spec=model7, data=kurs)
+model7Kurs 
+```
+
+### Model 8
+```{r}
+model8<-ugarchspec(variance.model=list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(3,3)),
+                   distribution.model="std")
+model8Kurs <- ugarchfit(spec=model8,  data=kurs)
+model8Kurs 
+```
+## GUNAKAN MODEL apARCH
+
+### Model 1
+```{r}
+model1<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(0,0)),
+                   distribution.model="std")
+model1Kurs <- ugarchfit(spec=model1, data=kurs)
+model1Kurs 
+```
+
+### Model 2
+```{r}
+model2<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,1)),
+                   distribution.model="std")
+model2Kurs <- ugarchfit(spec=model2, data=kurs)
+model2Kurs 
+```
+
+### Model 3
+```{r}
+model3<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,1)),
+                   distribution.model="std")
+model3Kurs <- ugarchfit(spec=model3, data=kurs)
+model3Kurs 
+```
+
+### Model 4
+```{r}
+model4<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,2)),
+                   distribution.model="std")
+model4Kurs <- ugarchfit(spec=model4, data=kurs)
+model4Kurs  
+```
+
+### Model 5
+```{r}
+model5<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,0)),
+                   distribution.model="std")
+model5Kurs <- ugarchfit(spec=model5, data=kurs)
+model5Kurs 
+```
+
+### Model 6
+```{r}
+model6<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(0,1)),
+                   distribution.model="std")
+model6Kurs <- ugarchfit(spec=model6, data=kurs)
+model6Kurs 
+```
+
+### Model 7
+```{r}
+model7<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,2)),
+                   distribution.model="std")
+model7Kurs <- ugarchfit(spec=model7, data=kurs)
+model7Kurs 
+```
+
+### Model 8
+```{r}
+model8<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(3,3)),
+                   distribution.model="std")
+model8Kurs <- ugarchfit(spec=model8, data=kurs)
+model8Kurs 
+```
+
+### Model 9
+```{r}
+model9<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(2,0)),
+                   distribution.model="std")
+model9Kurs <- ugarchfit(spec=model9,  data=kurs)
+model9Kurs 
+```
+
+
+## Model terpilih apARCH(1,1) ARMA(3,3)
+### Cek akurasi
+```{r}
+kurs_train=ts(kurs[1:229],frequency = 12,start=c(2001,1))
+kurs_test=ts(kurs[230:239],frequency = 12,start=c(2020,2))
+
+modelGARCH<-ugarchspec(variance.model=list(model="apARCH",garchOrder=c(1,1)),
+                       mean.model=list(armaOrder=c(3,3)),
+                       distribution.model="std")
+modelGARCHFIX <- ugarchfit(spec=modelGARCH, data=kurs_train)
+plot(modelGARCHFIX, which = 3)
+```
+
+### Prediksi
+```{r}
+bootp=ugarchboot(modelGARCHFIX,method=c("Partial","Full")[1],n.ahead = 10)
+bootp
+```
+
+```{r}
+plot(bootp, which=2)
+```
+
+```{r}
+s_f=bootp@forc@forecast$seriesFor 
+s_f
+```
+
+```{r}
+s_f1=as.vector(s_f)
+s_f1
+```
+
+### akurasi
+```{r}
+accuracy(s_f1, kurs_test)
+```
+
