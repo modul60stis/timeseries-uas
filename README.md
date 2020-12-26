@@ -4,7 +4,7 @@
 
 
 ## Mind Map
-![png](mindmap.png)
+![png](mindmap.jpeg)
 
 ## Cara Menggunakan
 
