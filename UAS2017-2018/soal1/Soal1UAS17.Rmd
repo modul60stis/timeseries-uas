@@ -1,0 +1,83 @@
+---
+title: "UAS2017/2018"
+author: "TIM MODUL"
+date: "12/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Library
+```{r message=FALSE, warning=FALSE}
+library(fpp2)
+library("forecast")
+library(tseries)
+library(rugarch)
+library(readxl)
+library(urca)
+library(knitr)
+library(MTS)
+```
+
+## Load Data
+```{r}
+soal1<- read_excel("timeseries_soal1.xlsx")
+kable(head(soal1, 10))
+```
+
+```{r}
+pengeluaran <- ts(soal1$logpengeluaran, start=c(2010), freq=4)
+kable(head(pengeluaran, 10))
+```
+
+## Plot
+```{r}
+plot.ts(pengeluaran, main = "log pengeluaran konsumsi indonesia ")
+```
+
+```{r}
+tsdisplay(pengeluaran) #terlihat terdapat efek seasonal
+```
+
+```{r}
+d.pengeluaran <- diff(pengeluaran, lag=4) #melakukan first diff seasonal
+testStasioner1 <- ur.df(d.pengeluaran)
+summary(testStasioner1) #tidak stasioner , dilanjutkan dengan differencing non seasonal
+
+```
+
+```{r}
+dd.pengeluaran <- diff(d.pengeluaran)
+testStasioner2 <- ur.df(dd.pengeluaran)
+summary(testStasioner2) #sudah stasioner
+```
+
+```{r}
+tsdisplay(dd.pengeluaran)
+```
+
+```{r}
+modelPengeluaran <- Arima(pengeluaran,order=c(0,1,1),seasonal=list(order=c(1,1,0),period=4),include.mean=F)
+r = resid(modelPengeluaran)
+checkresiduals(r)
+```
+
+## Cek autokorelasi
+```{r}
+Box.test(r, type = "Ljung-Box") 
+```
+
+## uji homoskedastisitas
+```{r}
+archTest(r) #tidak ada efek ARCH
+```
+
+## peramalan 
+```{r}
+fit=Arima(pengeluaran,order=c(0,1,1), seasonal = c(1,1,0))
+f = forecast:: forecast(fit, h=8)
+f
+```
+

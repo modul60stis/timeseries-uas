@@ -1,0 +1,173 @@
+---
+title: "UAS2017/2018"
+author: "TIM MODUL"
+date: "12/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Library
+```{r}
+library(urca)
+library(readxl)
+library(knitr)
+```
+
+## Load Data
+```{r}
+soal2<- read_excel("timeseries_soal2.xlsx")
+kable(head(soal2, 10))
+```
+
+```{r}
+cons <- ts(soal2$cons)
+income <- ts(soal2$income)
+wealth <- ts(soal2$wealth)
+```
+## Cek Stasionerity level nol
+```{r}
+cekCons <- ur.df(cons , type = "trend", selectlags = c("BIC"))
+summary(cekCons) 
+```
+
+```{r}
+cekCons <- ur.df(cons , type = "drift", selectlags = c("BIC"))
+summary(cekCons) 
+```
+
+```{r}
+cekCons <- ur.df(cons , type = "none", selectlags = c("BIC"))
+summary(cekCons) 
+```
+
+```{r}
+cekCons <- ur.df(diff(cons),selectlags = c("BIC"))
+summary(cekCons) 
+```
+
+```{r}
+cekIncome <- ur.df(income, type = "trend", selectlags = c("BIC"))
+summary(cekIncome)
+```
+
+```{r}
+cekIncome <- ur.df(income, type = "drift", selectlags = c("BIC"))
+summary(cekIncome)
+```
+
+```{r}
+cekIncome <- ur.df(income, type = "none", selectlags = c("BIC"))
+summary(cekIncome)
+```
+
+```{r}
+cekIncome <- ur.df(diff(income), selectlags = c("BIC"))
+summary(cekIncome)
+```
+
+```{r}
+cekWealth <- ur.df(wealth, type = "trend", selectlags = c("BIC"))
+summary(cekWealth)
+```
+
+```{r}
+cekWealth <- ur.df(wealth, type = "drift", selectlags = c("BIC"))
+summary(cekWealth)
+```
+
+```{r}
+cekWealth <- ur.df(wealth, type = "none", selectlags = c("BIC"))
+summary(cekWealth)
+```
+
+```{r}
+cekWealth <- ur.df(diff(wealth), selectlags = c("BIC"))
+summary(cekWealth)
+```
+
+## CONS sebagai variabel dependent
+```{r}
+data<-ts.union(cons,income, wealth)
+cons.eq<-lm(cons~income+wealth,data=data)
+summary(cons.eq)
+```
+
+```{r}
+plot.ts(cons.eq$residuals)
+```
+
+```{r}
+error.cons <- ur.df(cons.eq$residuals)
+summary(error.cons) #sudah stasioner
+```
+
+## INCOME sebagai variabel dependent
+```{r}
+income.eq<-lm(income~cons+wealth,data=data)
+summary(income.eq)
+```
+
+```{r}
+plot.ts(income.eq$residuals)
+```
+
+```{r}
+error.income <- ur.df(income.eq$residuals)
+summary(error.income)#sudah stasioner
+```
+
+## WEALTH sebagai variabel dependent
+```{r}
+wealth.eq<-lm(wealth~cons+income,data=data)
+summary(wealth.eq)
+```
+
+```{r}
+plot.ts(wealth.eq$residuals)
+```
+
+```{r}
+error.wealth <- ur.df(wealth.eq$residuals)
+summary(error.wealth)#sudah stasioner
+```
+
+**terlihat bahwa variabel CONS, INCOME, dan WEALTH sudah kointegrated pada model.**
+
+## MENGKONSTRUKSI ERROR CORRECTION MODEL DENGAN CONS sebagai dependent variable
+```{r}
+cons.d<-diff(cons)[-1]
+income.d <- diff(income)[-1]
+wealth.d <- diff(wealth)[-1]
+error.ecm1 <- cons.eq$residuals[-1:-2]
+cons.d1 <- diff(cons)[-(length(cons) - 1)]
+income.d1 <- diff(income[-(length(income) - 1)])
+wealth.d1 <- diff(wealth[-(length(income) - 1)])
+ecm.cons<- lm(cons.d ~ error.ecm1 + cons.d1 + income.d1 + wealth.d1)
+summary(ecm.cons)
+```
+
+terlihat bahwa variabel error correction term sudah signifikan namun bernilai positif, tetapi yang utama adalah signifikan yang berarti bahwa variabel income dan wealth dapat menentukan gejolak yang terjadi pada data cons walaupun tidak stabil karena bernilai positif.
+
+
+## MENGKONSTRUKSI ERROR CORRECTION MODEL DENGAN INCOME sebagai dependent variable
+```{r}
+error.ecm2 <- income.eq$residuals[-1:-2]
+ecm.income<- lm(income.d ~ error.ecm2 + income.d1 + cons.d1 + wealth.d1)
+summary(ecm.income)
+```
+
+terlihat bahwa variabel error correction term sudah signifikan namun bernilai positif, tetapi yang utama adalah signifikan yang berarti bahwa variabel cons dan wealth dapat menentukan gejolak yang terjadi pada data income walaupun tidak stabil karena bernilai positif.
+
+## MENGKONSTRUKSI ERROR CORRECTION MODEL DENGAN WEALTH sebagai dependent variable
+```{r}
+error.ecm3 <- wealth.eq$residuals[-1:-2]
+ecm.wealth<- lm(wealth.d ~ error.ecm3 + income.d1 + cons.d1 + wealth.d1)
+summary(ecm.wealth)
+```
+terlihat bahwa variabel error correction term tidak signifikan (alpha = 5%) namun bernilai positif, tetapi yang utama adalah tidak signifikan yang berarti bahwa variabel cons dan income tidak dapat menentukan gejolak yang terjadi pada data wealth.
+
+
+
