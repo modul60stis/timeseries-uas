@@ -24,7 +24,7 @@ Jika kalian ingin **berkontribusi** silahkan clone repository ini dan lakukan **
 
 
 ##
-[![ForTheBadge built-with-love](http://ForTheBadge.com/images/badges/built-with-love.svg)](https://GitHub.com/Naereen/) 
+[![ForTheBadge built-with-love](http://ForTheBadge.com/images/badges/built-with-love.svg)](https://www.instagram.com/stis60/) 
 
 *-- TIm Modul 60*
 
